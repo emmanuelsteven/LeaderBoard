@@ -1,3 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400&display=swap");
+
+*,
+*::before,
+*::after {
+  margin: 0;
+  box-sizing: border-box;
+  list-style: none;
+}
+
 body {
-  color: bisque;
+  font-family: "Lato", sans-serif;
+  background-color: gray;
+  padding: 5%;
+}
+
+h1,
+h2 {
+  font-weight: 500;
+}
+
+.main-container {
+  display: flex;
+  gap: 10%;
+  align-items: flex-start;
+  flex-direction: row;
+}
+
+.hero-container {
+  width: 50%;
+}
+
+.section-1 {
+  display: flex;
+  gap: 10px;
+  padding: 1rem 0;
+  align-items: center;
+}
+
+ul {
+  border: 2px solid black;
+  display: flex;
+  justify-content: flex-start;
+  padding: 0;
+  flex-direction: column;
+  width: 100%;
+}
+
+li {
+  padding: 2%;
+}
+
+li:nth-child(odd) {
+  background-color: #ebebeb;
+}
+
+li:nth-child(even) {
+  background-color: darkgrey;
+}
+
+.section2 {
+  width: 30%;
+  padding: 1rem 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 5%;
+  padding: 1rem 0;
+}
+
+.submitbtn {
+  width: 35%;
+  align-self: flex-end;
+  border-radius: 1rem;
+  font-size: 1rem;
+}
+
+input {
+  font-size: 1rem;
+  font-weight: 300;
+  border: 2px solid black;
+  margin-bottom: 10px;
+}
+
+.sec1btn {
+  border-radius: 0.8rem;
+  font-size: 1rem;
 }
