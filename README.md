@@ -173,6 +173,6 @@ I would like to thank;
 
 ## 📝 License <a name="license"></a>
 
-This project is [MIT](https://github.com/emmanuelsteven/Leaderboard/blob/master/MIT.md) licensed.
+This project is [MIT](https://github.com/emmanuelsteven/LeaderBoard/blob/ea035002d51578dd974b275d3f807761cd7fb914/LICENSE) licensed.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
