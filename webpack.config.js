@@ -2,17 +2,14 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
-    mode: 'development',
+  mode: 'development',
   entry: {
-    bundle:path.resolve(__dirname,'src/index.js'),
+    bundle: path.resolve(__dirname, 'src/index.js'),
   },
-  devServer: {
-    static: './dist',
-  }, 
 
   plugins: [
     new HtmlWebpackPlugin({
-        template: './src/index.html',
+      template: './src/index.html',
     }),
   ],
 
@@ -22,9 +19,9 @@ module.exports = {
     clean: true,
   },
   devtool: 'source-map',
-  devServer:{
-    static:{
-        directory: path.resolve(__dirname,'dist')
+  devServer: {
+    static: {
+      directory: path.resolve(__dirname, 'dist'),
     },
     port: 3000,
     open: true,
@@ -44,5 +41,5 @@ module.exports = {
       },
     ],
   },
-  
-}; 
+
+};
