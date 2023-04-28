@@ -10,13 +10,25 @@
 
 body {
   font-family: "Lato", sans-serif;
-  background-color: gray;
+  background-color: lightblue;
+
   padding: 5%;
 }
 
-h1,
-h2 {
-  font-weight: 500;
+.header {
+  font-weight: 900;
+  font-size: 4rem;
+  text-align: center;
+  padding-bottom: 5rem;
+  font-variant: small-caps;
+
+}
+
+.rech2,
+.addh2{
+  font-variant: small-caps;
+font-size: 2rem;
+font-weight: 700;
 }
 
 .main-container {
@@ -38,7 +50,6 @@ h2 {
 }
 
 ul {
-  border: 2px solid black;
   display: flex;
   justify-content: flex-start;
   padding: 0;
@@ -48,14 +59,16 @@ ul {
 
 li {
   padding: 2%;
+  border-radius: 3rem;
+  font-size: 1.2rem;
 }
 
 li:nth-child(odd) {
-  background-color: #ebebeb;
+  background-color: whitesmoke;
 }
 
 li:nth-child(even) {
-  background-color: darkgrey;
+  background-color: lightgray;
 }
 
 .section2 {
@@ -68,13 +81,18 @@ li:nth-child(even) {
   flex-direction: column;
   gap: 5%;
   padding: 1rem 0;
+ 
 }
 
 .submitbtn {
-  width: 35%;
+  width: 20%;
   align-self: flex-end;
   border-radius: 1rem;
-  font-size: 1rem;
+  font-size: 1.2rem;
+  transition: all .3s ease;
+  cursor: pointer;
+  border: none;
+  padding: 5px;
 }
 
 input {
@@ -82,9 +100,31 @@ input {
   font-weight: 300;
   border: 2px solid black;
   margin-bottom: 10px;
+  border-radius: 2rem;
+  box-shadow: 0 10px 30px -15px #607fbc;
+  border: none;
+  padding: 5px;
+  outline-style: none;
 }
 
-.sec1btn {
+.submitbtn:hover,
+.sec1btn:hover{
+  border: none;
   border-radius: 0.8rem;
   font-size: 1rem;
+  transition: all .3s ease;
+  cursor: pointer;
+  box-shadow: 0 0 10px grey;
+  padding: 10px;
+  /* font-variant: small-caps; */
 }
+
+.sec1btn{
+  border: none;
+  border-radius: 0.8rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
+}
+
+

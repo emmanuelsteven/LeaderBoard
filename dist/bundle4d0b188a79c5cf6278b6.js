@@ -1,222 +1,5 @@
+"use strict";
 (self["webpackChunkleaderboard"] = self["webpackChunkleaderboard"] || []).push([["bundle"],{
-
-/***/ "./node_modules/combined-stream/lib/combined_stream.js":
-/*!*************************************************************!*\
-  !*** ./node_modules/combined-stream/lib/combined_stream.js ***!
-  \*************************************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var util = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'util'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
-var Stream = Object(function webpackMissingModule() { var e = new Error("Cannot find module 'stream'"); e.code = 'MODULE_NOT_FOUND'; throw e; }());
-var DelayedStream = __webpack_require__(/*! delayed-stream */ "./node_modules/delayed-stream/lib/delayed_stream.js");
-
-module.exports = CombinedStream;
-function CombinedStream() {
-  this.writable = false;
-  this.readable = true;
-  this.dataSize = 0;
-  this.maxDataSize = 2 * 1024 * 1024;
-  this.pauseStreams = true;
-
-  this._released = false;
-  this._streams = [];
-  this._currentStream = null;
-  this._insideLoop = false;
-  this._pendingNext = false;
-}
-util.inherits(CombinedStream, Stream);
-
-CombinedStream.create = function(options) {
-  var combinedStream = new this();
-
-  options = options || {};
-  for (var option in options) {
-    combinedStream[option] = options[option];
-  }
-
-  return combinedStream;
-};
-
-CombinedStream.isStreamLike = function(stream) {
-  return (typeof stream !== 'function')
-    && (typeof stream !== 'string')
-    && (typeof stream !== 'boolean')
-    && (typeof stream !== 'number')
-    && (!Buffer.isBuffer(stream));
-};
-
-CombinedStream.prototype.append = function(stream) {
-  var isStreamLike = CombinedStream.isStreamLike(stream);
-
-  if (isStreamLike) {
-    if (!(stream instanceof DelayedStream)) {
-      var newStream = DelayedStream.create(stream, {
-        maxDataSize: Infinity,
-        pauseStream: this.pauseStreams,
-      });
-      stream.on('data', this._checkDataSize.bind(this));
-      stream = newStream;
-    }
-
-    this._handleErrors(stream);
-
-    if (this.pauseStreams) {
-      stream.pause();
-    }
-  }
-
-  this._streams.push(stream);
-  return this;
-};
-
-CombinedStream.prototype.pipe = function(dest, options) {
-  Stream.prototype.pipe.call(this, dest, options);
-  this.resume();
-  return dest;
-};
-
-CombinedStream.prototype._getNext = function() {
-  this._currentStream = null;
-
-  if (this._insideLoop) {
-    this._pendingNext = true;
-    return; // defer call
-  }
-
-  this._insideLoop = true;
-  try {
-    do {
-      this._pendingNext = false;
-      this._realGetNext();
-    } while (this._pendingNext);
-  } finally {
-    this._insideLoop = false;
-  }
-};
-
-CombinedStream.prototype._realGetNext = function() {
-  var stream = this._streams.shift();
-
-
-  if (typeof stream == 'undefined') {
-    this.end();
-    return;
-  }
-
-  if (typeof stream !== 'function') {
-    this._pipeNext(stream);
-    return;
-  }
-
-  var getStream = stream;
-  getStream(function(stream) {
-    var isStreamLike = CombinedStream.isStreamLike(stream);
-    if (isStreamLike) {
-      stream.on('data', this._checkDataSize.bind(this));
-      this._handleErrors(stream);
-    }
-
-    this._pipeNext(stream);
-  }.bind(this));
-};
-
-CombinedStream.prototype._pipeNext = function(stream) {
-  this._currentStream = stream;
-
-  var isStreamLike = CombinedStream.isStreamLike(stream);
-  if (isStreamLike) {
-    stream.on('end', this._getNext.bind(this));
-    stream.pipe(this, {end: false});
-    return;
-  }
-
-  var value = stream;
-  this.write(value);
-  this._getNext();
-};
-
-CombinedStream.prototype._handleErrors = function(stream) {
-  var self = this;
-  stream.on('error', function(err) {
-    self._emitError(err);
-  });
-};
-
-CombinedStream.prototype.write = function(data) {
-  this.emit('data', data);
-};
-
-CombinedStream.prototype.pause = function() {
-  if (!this.pauseStreams) {
-    return;
-  }
-
-  if(this.pauseStreams && this._currentStream && typeof(this._currentStream.pause) == 'function') this._currentStream.pause();
-  this.emit('pause');
-};
-
-CombinedStream.prototype.resume = function() {
-  if (!this._released) {
-    this._released = true;
-    this.writable = true;
-    this._getNext();
-  }
-
-  if(this.pauseStreams && this._currentStream && typeof(this._currentStream.resume) == 'function') this._currentStream.resume();
-  this.emit('resume');
-};
-
-CombinedStream.prototype.end = function() {
-  this._reset();
-  this.emit('end');
-};
-
-CombinedStream.prototype.destroy = function() {
-  this._reset();
-  this.emit('close');
-};
-
-CombinedStream.prototype._reset = function() {
-  this.writable = false;
-  this._streams = [];
-  this._currentStream = null;
-};
-
-CombinedStream.prototype._checkDataSize = function() {
-  this._updateDataSize();
-  if (this.dataSize <= this.maxDataSize) {
-    return;
-  }
-
-  var message =
-    'DelayedStream#maxDataSize of ' + this.maxDataSize + ' bytes exceeded.';
-  this._emitError(new Error(message));
-};
-
-CombinedStream.prototype._updateDataSize = function() {
-  this.dataSize = 0;
-
-  var self = this;
-  this._streams.forEach(function(stream) {
-    if (!stream.dataSize) {
-      return;
-    }
-
-    self.dataSize += stream.dataSize;
-  });
-
-  if (this._currentStream && this._currentStream.dataSize) {
-    this.dataSize += this._currentStream.dataSize;
-  }
-};
-
-CombinedStream.prototype._emitError = function(err) {
-  this._reset();
-  this.emit('error', err);
-};
-
-
-/***/ }),
 
 /***/ "./node_modules/css-loader/dist/cjs.js!./src/style.css":
 /*!*************************************************************!*\
@@ -224,7 +7,6 @@ CombinedStream.prototype._emitError = function(err) {
   \*************************************************************/
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -239,7 +21,7 @@ __webpack_require__.r(__webpack_exports__);
 var ___CSS_LOADER_EXPORT___ = _node_modules_css_loader_dist_runtime_api_js__WEBPACK_IMPORTED_MODULE_1___default()((_node_modules_css_loader_dist_runtime_sourceMaps_js__WEBPACK_IMPORTED_MODULE_0___default()));
 ___CSS_LOADER_EXPORT___.push([module.id, "@import url(https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400&display=swap);"]);
 // Module
-___CSS_LOADER_EXPORT___.push([module.id, "*,\n*::before,\n*::after {\n  margin: 0;\n  box-sizing: border-box;\n  list-style: none;\n}\n\nbody {\n  font-family: \"Lato\", sans-serif;\n  background-color: gray;\n  padding: 5%;\n}\n\nh1,\nh2 {\n  font-weight: 500;\n}\n\n.main-container {\n  display: flex;\n  gap: 10%;\n  align-items: flex-start;\n  flex-direction: row;\n}\n\n.hero-container {\n  width: 50%;\n}\n\n.section-1 {\n  display: flex;\n  gap: 10px;\n  padding: 1rem 0;\n  align-items: center;\n}\n\nul {\n  border: 2px solid black;\n  display: flex;\n  justify-content: flex-start;\n  padding: 0;\n  flex-direction: column;\n  width: 100%;\n}\n\nli {\n  padding: 2%;\n}\n\nli:nth-child(odd) {\n  background-color: #ebebeb;\n}\n\nli:nth-child(even) {\n  background-color: darkgrey;\n}\n\n.section2 {\n  width: 30%;\n  padding: 1rem 0;\n}\n\n.form {\n  display: flex;\n  flex-direction: column;\n  gap: 5%;\n  padding: 1rem 0;\n}\n\n.submitbtn {\n  width: 35%;\n  align-self: flex-end;\n  border-radius: 1rem;\n  font-size: 1rem;\n}\n\ninput {\n  font-size: 1rem;\n  font-weight: 300;\n  border: 2px solid black;\n  margin-bottom: 10px;\n}\n\n.sec1btn {\n  border-radius: 0.8rem;\n  font-size: 1rem;\n}\n", "",{"version":3,"sources":["webpack://./src/style.css"],"names":[],"mappings":"AAEA;;;EAGE,SAAS;EACT,sBAAsB;EACtB,gBAAgB;AAClB;;AAEA;EACE,+BAA+B;EAC/B,sBAAsB;EACtB,WAAW;AACb;;AAEA;;EAEE,gBAAgB;AAClB;;AAEA;EACE,aAAa;EACb,QAAQ;EACR,uBAAuB;EACvB,mBAAmB;AACrB;;AAEA;EACE,UAAU;AACZ;;AAEA;EACE,aAAa;EACb,SAAS;EACT,eAAe;EACf,mBAAmB;AACrB;;AAEA;EACE,uBAAuB;EACvB,aAAa;EACb,2BAA2B;EAC3B,UAAU;EACV,sBAAsB;EACtB,WAAW;AACb;;AAEA;EACE,WAAW;AACb;;AAEA;EACE,yBAAyB;AAC3B;;AAEA;EACE,0BAA0B;AAC5B;;AAEA;EACE,UAAU;EACV,eAAe;AACjB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,OAAO;EACP,eAAe;AACjB;;AAEA;EACE,UAAU;EACV,oBAAoB;EACpB,mBAAmB;EACnB,eAAe;AACjB;;AAEA;EACE,eAAe;EACf,gBAAgB;EAChB,uBAAuB;EACvB,mBAAmB;AACrB;;AAEA;EACE,qBAAqB;EACrB,eAAe;AACjB","sourcesContent":["@import url(\"https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400&display=swap\");\n\n*,\n*::before,\n*::after {\n  margin: 0;\n  box-sizing: border-box;\n  list-style: none;\n}\n\nbody {\n  font-family: \"Lato\", sans-serif;\n  background-color: gray;\n  padding: 5%;\n}\n\nh1,\nh2 {\n  font-weight: 500;\n}\n\n.main-container {\n  display: flex;\n  gap: 10%;\n  align-items: flex-start;\n  flex-direction: row;\n}\n\n.hero-container {\n  width: 50%;\n}\n\n.section-1 {\n  display: flex;\n  gap: 10px;\n  padding: 1rem 0;\n  align-items: center;\n}\n\nul {\n  border: 2px solid black;\n  display: flex;\n  justify-content: flex-start;\n  padding: 0;\n  flex-direction: column;\n  width: 100%;\n}\n\nli {\n  padding: 2%;\n}\n\nli:nth-child(odd) {\n  background-color: #ebebeb;\n}\n\nli:nth-child(even) {\n  background-color: darkgrey;\n}\n\n.section2 {\n  width: 30%;\n  padding: 1rem 0;\n}\n\n.form {\n  display: flex;\n  flex-direction: column;\n  gap: 5%;\n  padding: 1rem 0;\n}\n\n.submitbtn {\n  width: 35%;\n  align-self: flex-end;\n  border-radius: 1rem;\n  font-size: 1rem;\n}\n\ninput {\n  font-size: 1rem;\n  font-weight: 300;\n  border: 2px solid black;\n  margin-bottom: 10px;\n}\n\n.sec1btn {\n  border-radius: 0.8rem;\n  font-size: 1rem;\n}\n"],"sourceRoot":""}]);
+___CSS_LOADER_EXPORT___.push([module.id, "*,\n*::before,\n*::after {\n  margin: 0;\n  box-sizing: border-box;\n  list-style: none;\n}\n\nbody {\n  font-family: \"Lato\", sans-serif;\n  background-color: lightblue;\n\n  padding: 5%;\n}\n\nh1 {\n  font-weight: 900;\n  font-size: 4rem;\n  \n}\n\n.main-container {\n  display: flex;\n  gap: 10%;\n  align-items: flex-start;\n  flex-direction: row;\n}\n\n.hero-container {\n  width: 50%;\n}\n\n.section-1 {\n  display: flex;\n  gap: 10px;\n  padding: 1rem 0;\n  align-items: center;\n}\n\nul {\n  /* border: 2px solid black; */\n  display: flex;\n  justify-content: flex-start;\n  padding: 0;\n  flex-direction: column;\n  width: 100%;\n  /* border-radius: 3rem; */\n}\n\nli {\n  padding: 2%;\n  border-radius: 3rem;\n  font-size: 1.2rem;\n}\n\nli:nth-child(odd) {\n  background-color: whitesmoke;\n}\n\nli:nth-child(even) {\n  background-color: lightsteelblue;\n}\n\n.section2 {\n  width: 30%;\n  padding: 1rem 0;\n}\n\n.form {\n  display: flex;\n  flex-direction: column;\n  gap: 5%;\n  padding: 1rem 0;\n \n}\n\n.submitbtn {\n  width: 35%;\n  align-self: flex-end;\n  border-radius: 1rem;\n  font-size: 1rem;\n  transition: all .3s ease;\n  cursor: pointer;\n  border: none;\n}\n\ninput {\n  font-size: 1rem;\n  font-weight: 300;\n  border: 2px solid black;\n  margin-bottom: 10px;\n  border-radius: 2rem;\n  box-shadow: 0 10px 30px -15px #607fbc;\n  border: none;\n  padding: 5px;\n  outline-style: none;\n}\n\n.submitbtn:hover,\n.sec1btn:hover{\n  border: none;\n  /* box-shadow: 0 0 10px rgb(138, 42, 42); */\n  border-radius: 0.8rem;\n  font-size: 1rem;\n  transition: all .3s ease;\n  cursor: pointer;\n  box-shadow: 0 0 10px red;\n}\n\n.sec1btn{\n  border: none;\n  border-radius: 0.8rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\ninput[type=text]:focus {\n  background-color: lightsteelblue;\n}\n\n", "",{"version":3,"sources":["webpack://./src/style.css"],"names":[],"mappings":"AAEA;;;EAGE,SAAS;EACT,sBAAsB;EACtB,gBAAgB;AAClB;;AAEA;EACE,+BAA+B;EAC/B,2BAA2B;;EAE3B,WAAW;AACb;;AAEA;EACE,gBAAgB;EAChB,eAAe;;AAEjB;;AAEA;EACE,aAAa;EACb,QAAQ;EACR,uBAAuB;EACvB,mBAAmB;AACrB;;AAEA;EACE,UAAU;AACZ;;AAEA;EACE,aAAa;EACb,SAAS;EACT,eAAe;EACf,mBAAmB;AACrB;;AAEA;EACE,6BAA6B;EAC7B,aAAa;EACb,2BAA2B;EAC3B,UAAU;EACV,sBAAsB;EACtB,WAAW;EACX,yBAAyB;AAC3B;;AAEA;EACE,WAAW;EACX,mBAAmB;EACnB,iBAAiB;AACnB;;AAEA;EACE,4BAA4B;AAC9B;;AAEA;EACE,gCAAgC;AAClC;;AAEA;EACE,UAAU;EACV,eAAe;AACjB;;AAEA;EACE,aAAa;EACb,sBAAsB;EACtB,OAAO;EACP,eAAe;;AAEjB;;AAEA;EACE,UAAU;EACV,oBAAoB;EACpB,mBAAmB;EACnB,eAAe;EACf,wBAAwB;EACxB,eAAe;EACf,YAAY;AACd;;AAEA;EACE,eAAe;EACf,gBAAgB;EAChB,uBAAuB;EACvB,mBAAmB;EACnB,mBAAmB;EACnB,qCAAqC;EACrC,YAAY;EACZ,YAAY;EACZ,mBAAmB;AACrB;;AAEA;;EAEE,YAAY;EACZ,2CAA2C;EAC3C,qBAAqB;EACrB,eAAe;EACf,wBAAwB;EACxB,eAAe;EACf,wBAAwB;AAC1B;;AAEA;EACE,YAAY;EACZ,qBAAqB;EACrB,eAAe;EACf,eAAe;AACjB;;AAEA;EACE,gCAAgC;AAClC","sourcesContent":["@import url(\"https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400&display=swap\");\n\n*,\n*::before,\n*::after {\n  margin: 0;\n  box-sizing: border-box;\n  list-style: none;\n}\n\nbody {\n  font-family: \"Lato\", sans-serif;\n  background-color: lightblue;\n\n  padding: 5%;\n}\n\nh1 {\n  font-weight: 900;\n  font-size: 4rem;\n  \n}\n\n.main-container {\n  display: flex;\n  gap: 10%;\n  align-items: flex-start;\n  flex-direction: row;\n}\n\n.hero-container {\n  width: 50%;\n}\n\n.section-1 {\n  display: flex;\n  gap: 10px;\n  padding: 1rem 0;\n  align-items: center;\n}\n\nul {\n  /* border: 2px solid black; */\n  display: flex;\n  justify-content: flex-start;\n  padding: 0;\n  flex-direction: column;\n  width: 100%;\n  /* border-radius: 3rem; */\n}\n\nli {\n  padding: 2%;\n  border-radius: 3rem;\n  font-size: 1.2rem;\n}\n\nli:nth-child(odd) {\n  background-color: whitesmoke;\n}\n\nli:nth-child(even) {\n  background-color: lightsteelblue;\n}\n\n.section2 {\n  width: 30%;\n  padding: 1rem 0;\n}\n\n.form {\n  display: flex;\n  flex-direction: column;\n  gap: 5%;\n  padding: 1rem 0;\n \n}\n\n.submitbtn {\n  width: 35%;\n  align-self: flex-end;\n  border-radius: 1rem;\n  font-size: 1rem;\n  transition: all .3s ease;\n  cursor: pointer;\n  border: none;\n}\n\ninput {\n  font-size: 1rem;\n  font-weight: 300;\n  border: 2px solid black;\n  margin-bottom: 10px;\n  border-radius: 2rem;\n  box-shadow: 0 10px 30px -15px #607fbc;\n  border: none;\n  padding: 5px;\n  outline-style: none;\n}\n\n.submitbtn:hover,\n.sec1btn:hover{\n  border: none;\n  /* box-shadow: 0 0 10px rgb(138, 42, 42); */\n  border-radius: 0.8rem;\n  font-size: 1rem;\n  transition: all .3s ease;\n  cursor: pointer;\n  box-shadow: 0 0 10px red;\n}\n\n.sec1btn{\n  border: none;\n  border-radius: 0.8rem;\n  font-size: 1rem;\n  cursor: pointer;\n}\n\ninput[type=text]:focus {\n  background-color: lightsteelblue;\n}\n\n"],"sourceRoot":""}]);
 // Exports
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (___CSS_LOADER_EXPORT___);
 
@@ -252,7 +34,6 @@ ___CSS_LOADER_EXPORT___.push([module.id, "*,\n*::before,\n*::after {\n  margin: 
   \*****************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 /*
@@ -347,7 +128,6 @@ module.exports = function (cssWithMappingToString) {
   \************************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 module.exports = function (item) {
@@ -367,130 +147,12 @@ module.exports = function (item) {
 
 /***/ }),
 
-/***/ "./node_modules/delayed-stream/lib/delayed_stream.js":
-/*!***********************************************************!*\
-  !*** ./node_modules/delayed-stream/lib/delayed_stream.js ***!
-  \***********************************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-var Stream = Object(function webpackMissingModule() { var e = new Error("Cannot find module 'stream'"); e.code = 'MODULE_NOT_FOUND'; throw e; }());
-var util = __webpack_require__(Object(function webpackMissingModule() { var e = new Error("Cannot find module 'util'"); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
-
-module.exports = DelayedStream;
-function DelayedStream() {
-  this.source = null;
-  this.dataSize = 0;
-  this.maxDataSize = 1024 * 1024;
-  this.pauseStream = true;
-
-  this._maxDataSizeExceeded = false;
-  this._released = false;
-  this._bufferedEvents = [];
-}
-util.inherits(DelayedStream, Stream);
-
-DelayedStream.create = function(source, options) {
-  var delayedStream = new this();
-
-  options = options || {};
-  for (var option in options) {
-    delayedStream[option] = options[option];
-  }
-
-  delayedStream.source = source;
-
-  var realEmit = source.emit;
-  source.emit = function() {
-    delayedStream._handleEmit(arguments);
-    return realEmit.apply(source, arguments);
-  };
-
-  source.on('error', function() {});
-  if (delayedStream.pauseStream) {
-    source.pause();
-  }
-
-  return delayedStream;
-};
-
-Object.defineProperty(DelayedStream.prototype, 'readable', {
-  configurable: true,
-  enumerable: true,
-  get: function() {
-    return this.source.readable;
-  }
-});
-
-DelayedStream.prototype.setEncoding = function() {
-  return this.source.setEncoding.apply(this.source, arguments);
-};
-
-DelayedStream.prototype.resume = function() {
-  if (!this._released) {
-    this.release();
-  }
-
-  this.source.resume();
-};
-
-DelayedStream.prototype.pause = function() {
-  this.source.pause();
-};
-
-DelayedStream.prototype.release = function() {
-  this._released = true;
-
-  this._bufferedEvents.forEach(function(args) {
-    this.emit.apply(this, args);
-  }.bind(this));
-  this._bufferedEvents = [];
-};
-
-DelayedStream.prototype.pipe = function() {
-  var r = Stream.prototype.pipe.apply(this, arguments);
-  this.resume();
-  return r;
-};
-
-DelayedStream.prototype._handleEmit = function(args) {
-  if (this._released) {
-    this.emit.apply(this, args);
-    return;
-  }
-
-  if (args[0] === 'data') {
-    this.dataSize += args[1].length;
-    this._checkIfMaxDataSizeExceeded();
-  }
-
-  this._bufferedEvents.push(args);
-};
-
-DelayedStream.prototype._checkIfMaxDataSizeExceeded = function() {
-  if (this._maxDataSizeExceeded) {
-    return;
-  }
-
-  if (this.dataSize <= this.maxDataSize) {
-    return;
-  }
-
-  this._maxDataSizeExceeded = true;
-  var message =
-    'DelayedStream#maxDataSize of ' + this.maxDataSize + ' bytes exceeded.'
-  this.emit('error', new Error(message));
-};
-
-
-/***/ }),
-
 /***/ "./src/style.css":
 /*!***********************!*\
   !*** ./src/style.css ***!
   \***********************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -545,7 +207,6 @@ var update = _node_modules_style_loader_dist_runtime_injectStylesIntoStyleTag_js
   \****************************************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 var stylesInDOM = [];
@@ -639,7 +300,6 @@ module.exports = function (list, options) {
   \********************************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 var memo = {};
@@ -683,7 +343,6 @@ module.exports = insertBySelector;
   \**********************************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 /* istanbul ignore next  */
@@ -703,7 +362,6 @@ module.exports = insertStyleElement;
   \**********************************************************************************/
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
 
-"use strict";
 
 
 /* istanbul ignore next  */
@@ -723,7 +381,6 @@ module.exports = setAttributesWithoutAttributes;
   \***************************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 /* istanbul ignore next  */
@@ -794,7 +451,6 @@ module.exports = domAPI;
   \*********************************************************************/
 /***/ ((module) => {
 
-"use strict";
 
 
 /* istanbul ignore next  */
@@ -818,16 +474,16 @@ module.exports = styleTagTransform;
   \**********************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _style_css__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./style.css */ "./src/style.css");
-/* harmony import */ var _modules_createGame__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/createGame */ "./src/modules/createGame.js");
-/* harmony import */ var _modules_getDataAPI__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/getDataAPI */ "./src/modules/getDataAPI.js");
+/* harmony import */ var _modules_createGame_js__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./modules/createGame.js */ "./src/modules/createGame.js");
+/* harmony import */ var _modules_getDataAPI_js__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./modules/getDataAPI.js */ "./src/modules/getDataAPI.js");
 
 
 
-(0,_modules_createGame__WEBPACK_IMPORTED_MODULE_1__.gameScores)()
-;(0,_modules_getDataAPI__WEBPACK_IMPORTED_MODULE_2__["default"])()
+
+(0,_modules_createGame_js__WEBPACK_IMPORTED_MODULE_1__.gameScores)();
+(0,_modules_getDataAPI_js__WEBPACK_IMPORTED_MODULE_2__["default"])();
 
 /***/ }),
 
@@ -837,7 +493,6 @@ __webpack_require__.r(__webpack_exports__);
   \***********************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "createGame": () => (/* binding */ createGame),
@@ -846,31 +501,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
 
 
- const createGame = async () => {
-const response = await axios__WEBPACK_IMPORTED_MODULE_0__["default"].post ('https://us-central1-js-capstone-backend.cloudfunctions.net/api/games', {
+const createGame = async () => {
+  await axios__WEBPACK_IMPORTED_MODULE_0__["default"].post('https://us-central1-js-capstone-backend.cloudfunctions.net/api/games', {
     name: 'God of War',
-})
-
-console.log (response);
-}
+  });
+};
 
 const myGameId = '9XM6tCAXM9ISEV7PJjrr';
 
 const gameScores = async () => {
-    const form = document.getElementById('form')
-    form.addEventListener('submit',async(event) => { 
-        event.preventDefault()
-        const theName = document.getElementById('name').value
-        const theScore = document.getElementById ('scores').value
-        const response = await axios__WEBPACK_IMPORTED_MODULE_0__["default"].post (`https://us-central1-js-capstone-backend.cloudfunctions.net/api/games/${myGameId}/scores`, {
-            user: theName,
-            score: theScore,
-        })
-    })
-}
+  const form = document.getElementById('form');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const theName = document.getElementById('name').value;
+    const theScore = document.getElementById('scores').value;
+    await axios__WEBPACK_IMPORTED_MODULE_0__["default"].post(`https://us-central1-js-capstone-backend.cloudfunctions.net/api/games/${myGameId}/scores`, {
+      user: theName,
+      score: theScore,
+    });
+    form.reset();
+  });
+};
 
 
- 
 
 /***/ }),
 
@@ -880,38 +533,30 @@ const gameScores = async () => {
   \***********************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
 /* harmony export */ });
-/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
-/* harmony import */ var combined_stream__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! combined-stream */ "./node_modules/combined-stream/lib/combined_stream.js");
-/* harmony import */ var combined_stream__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(combined_stream__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var axios__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! axios */ "./node_modules/axios/lib/axios.js");
 
 
+const getData = async () => {
+  const response = await axios__WEBPACK_IMPORTED_MODULE_0__["default"].get('https://us-central1-js-capstone-backend.cloudfunctions.net/api/games/9XM6tCAXM9ISEV7PJjrr/scores');
 
+  return response.data.result;
+};
 
-const myGameId = '9XM6tCAXM9ISEV7PJjrr';
-
-const getData = async(myGameId) => { 
-    const response = await axios__WEBPACK_IMPORTED_MODULE_1__["default"].get(`https://us-central1-js-capstone-backend.cloudfunctions.net/api/games/${myGameId}/scores`)
-    
-    return response.data.result;
-}
-
-const refreshbtn = document.querySelector('.sec1btn')
-const scoresheet = document.querySelector('#scores-sheet')
-refreshbtn.addEventListener('click', async() =>{
-    const returnData = await getData(myGameId)
-    scoresheet.innerHTML = '',
-    returnData.forEach(element =>{ 
-        const li = document.createElement('li');
-        li.innerText = `${element.user}:${element.score}`
-
-    })
-        
-})
+const refreshbtn = document.querySelector('.sec1btn');
+const scoresheet = document.querySelector('#scores-sheet');
+refreshbtn.addEventListener('click', async () => {
+  const returnData = await getData();
+  scoresheet.innerHTML = '';
+  returnData.forEach((element) => {
+    const li = document.createElement('li');
+    li.innerText = `${element.user}: ${element.score}`;
+    scoresheet.appendChild(li);
+  });
+});
 
 /* harmony default export */ const __WEBPACK_DEFAULT_EXPORT__ = (getData);
 
@@ -923,7 +568,6 @@ refreshbtn.addEventListener('click', async() =>{
   \*****************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1001,7 +645,6 @@ _utils_js__WEBPACK_IMPORTED_MODULE_2__["default"].forEach(knownAdapters, (fn, va
   \************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1278,7 +921,6 @@ const isXHRAdapterSupported = typeof XMLHttpRequest !== 'undefined';
   \*****************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1395,7 +1037,6 @@ axios.default = axios;
   \******************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1532,7 +1173,6 @@ class CancelToken {
   \********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1574,7 +1214,6 @@ _utils_js__WEBPACK_IMPORTED_MODULE_1__["default"].inherits(CanceledError, _core_
   \***************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ isCancel)
@@ -1594,7 +1233,6 @@ function isCancel(value) {
   \**********************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1820,7 +1458,6 @@ _utils_js__WEBPACK_IMPORTED_MODULE_3__["default"].forEach(['post', 'put', 'patch
   \***************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -1936,7 +1573,6 @@ AxiosError.from = (error, code, config, request, response, customProps) => {
   \*****************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -2241,7 +1877,6 @@ _utils_js__WEBPACK_IMPORTED_MODULE_0__["default"].freezeMethods(AxiosHeaders);
   \***********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -2328,7 +1963,6 @@ class InterceptorManager {
   \******************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ buildFullPath)
@@ -2366,7 +2000,6 @@ function buildFullPath(baseURL, requestedURL) {
   \********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ dispatchRequest)
@@ -2468,7 +2101,6 @@ function dispatchRequest(config) {
   \****************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ mergeConfig)
@@ -2590,7 +2222,6 @@ function mergeConfig(config1, config2) {
   \***********************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ settle)
@@ -2633,7 +2264,6 @@ function settle(resolve, reject, response) {
   \******************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ transformData)
@@ -2679,7 +2309,6 @@ function transformData(fns, response) {
   \**************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -2867,7 +2496,6 @@ _utils_js__WEBPACK_IMPORTED_MODULE_0__["default"].forEach(['post', 'put', 'patch
   \*********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -2889,7 +2517,6 @@ __webpack_require__.r(__webpack_exports__);
   \********************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "VERSION": () => (/* binding */ VERSION)
@@ -2904,7 +2531,6 @@ const VERSION = "1.3.6";
   \****************************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -2978,7 +2604,6 @@ prototype.toString = function toString(encoder) {
   \**********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3064,7 +2689,6 @@ Object.entries(HttpStatusCode).forEach(([key, value]) => {
   \************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ bind)
@@ -3086,7 +2710,6 @@ function bind(fn, thisArg) {
   \****************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ buildURL)
@@ -3166,7 +2789,6 @@ function buildURL(url, params, options) {
   \*******************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ combineURLs)
@@ -3196,7 +2818,6 @@ function combineURLs(baseURL, relativeURL) {
   \***************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3265,7 +2886,6 @@ __webpack_require__.r(__webpack_exports__);
   \**********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3373,7 +2993,6 @@ function formDataToJSON(formData) {
   \*********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ isAbsoluteURL)
@@ -3403,7 +3022,6 @@ function isAbsoluteURL(url) {
   \********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ isAxiosError)
@@ -3433,7 +3051,6 @@ function isAxiosError(payload) {
   \***********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3517,7 +3134,6 @@ __webpack_require__.r(__webpack_exports__);
   \************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3534,7 +3150,6 @@ __webpack_require__.r(__webpack_exports__);
   \********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3605,7 +3220,6 @@ const ignoreDuplicateOf = _utils_js__WEBPACK_IMPORTED_MODULE_0__["default"].toOb
   \*********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ parseProtocol)
@@ -3626,7 +3240,6 @@ function parseProtocol(url) {
   \*******************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3696,7 +3309,6 @@ function speedometer(samplesCount, min) {
   \**************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ spread)
@@ -3739,7 +3351,6 @@ function spread(callback) {
   \******************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -3976,7 +3587,6 @@ function toFormData(obj, formData, options) {
   \************************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (/* binding */ toURLEncodedForm)
@@ -4012,7 +3622,6 @@ function toURLEncodedForm(data, options) {
   \*****************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -4120,7 +3729,6 @@ function assertOptions(options, schema, allowUnknown) {
   \*****************************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -4138,7 +3746,6 @@ __webpack_require__.r(__webpack_exports__);
   \*********************************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -4156,7 +3763,6 @@ __webpack_require__.r(__webpack_exports__);
   \****************************************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -4176,7 +3782,6 @@ __webpack_require__.r(__webpack_exports__);
   \**********************************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -4258,7 +3863,6 @@ const isStandardBrowserEnv = (() => {
   \*****************************************/
 /***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
 
-"use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "default": () => (__WEBPACK_DEFAULT_EXPORT__)
@@ -4989,4 +4593,4 @@ const toJSONObject = (obj) => {
 /******/ var __webpack_exports__ = (__webpack_exec__("./src/index.js"));
 /******/ }
 ]);
-//# sourceMappingURL=bundle4e1ad18b042e235f4dcf.js.map
+//# sourceMappingURL=bundle4d0b188a79c5cf6278b6.js.map
