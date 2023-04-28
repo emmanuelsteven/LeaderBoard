@@ -69,7 +69,7 @@
 
 ## 🚀 Live Demo <a name="live-demo"></a>
 
-- [Demo]()
+- [Demo](https://emmanuelsteven.github.io/LeaderBoard/dist/)
 
 <!-- GETTING STARTED -->
 
