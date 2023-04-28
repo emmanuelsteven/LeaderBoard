@@ -11,7 +11,6 @@
 body {
   font-family: "Lato", sans-serif;
   background-color: lightblue;
-
   padding: 5%;
 }
 
@@ -21,14 +20,13 @@ body {
   text-align: center;
   padding-bottom: 5rem;
   font-variant: small-caps;
-
 }
 
 .rech2,
-.addh2{
+.addh2 {
   font-variant: small-caps;
-font-size: 2rem;
-font-weight: 700;
+  font-size: 2rem;
+  font-weight: 700;
 }
 
 .main-container {
@@ -81,7 +79,14 @@ li:nth-child(even) {
   flex-direction: column;
   gap: 5%;
   padding: 1rem 0;
- 
+}
+
+.sec1btn {
+  border: none;
+  border-radius: 0.8rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 5px;
 }
 
 .submitbtn {
@@ -89,7 +94,7 @@ li:nth-child(even) {
   align-self: flex-end;
   border-radius: 1rem;
   font-size: 1.2rem;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
   border: none;
   padding: 5px;
@@ -98,7 +103,6 @@ li:nth-child(even) {
 input {
   font-size: 1rem;
   font-weight: 300;
-  border: 2px solid black;
   margin-bottom: 10px;
   border-radius: 2rem;
   box-shadow: 0 10px 30px -15px #607fbc;
@@ -108,23 +112,12 @@ input {
 }
 
 .submitbtn:hover,
-.sec1btn:hover{
+.sec1btn:hover {
   border: none;
   border-radius: 0.8rem;
   font-size: 1rem;
-  transition: all .3s ease;
+  transition: all 0.3s ease;
   cursor: pointer;
   box-shadow: 0 0 10px grey;
   padding: 10px;
-  /* font-variant: small-caps; */
 }
-
-.sec1btn{
-  border: none;
-  border-radius: 0.8rem;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 5px;
-}
-
-
