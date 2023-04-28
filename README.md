@@ -6,29 +6,29 @@
 
 # 📗 Table of Contents
 
-- [📖 About the Project](#about-project)
-  - [🛠 Built With](#built-with)
-    - [Tech Stack](#tech-stack)
-    - [Key Features](#key-features)
-  - [🚀 Live Demo](#live-demo)
-- [💻 Getting Started](#getting-started)
-  - [Setup](#setup)
-  - [Prerequisites](#prerequisites)
-  - [Install](#install)
-  - [Usage](#usage)
-  - [Run tests](#run-tests)
-  - [Deployment](#triangular_flag_on_post-deployment)
-- [👥 Authors](#authors)
-- [🔭 Future Features](#future-features)
-- [🤝 Contributing](#contributing)
-- [⭐️ Show your support](#support)
-- [🙏 Acknowledgements](#acknowledgements)
-- [📝 License](#license)
+- [📗 Table of Contents](#-table-of-contents)
+- [📖 About the Project](#about-project) 
+  - [🛠 Built With ](#-built-with-)
+    - [Tech Stack ](#tech-stack-)
+    - [Key Features ](#key-features-)
+  - [🚀 Live Demo ](#-live-demo-)
+  - [💻 Getting Started ](#-getting-started-)
+    - [Prerequisites](#prerequisites)
+    - [Setup](#setup)
+    - [Usage](#usage)
+  - [👥 Authors ](#-authors-)
+  - [🔭 Future Features ](#-future-features-)
+  - [🤝 Contributing ](#-contributing-)
+  - [⭐️ Show your support ](#️-show-your-support-)
+  - [🙏 Acknowledgments ](#-acknowledgments-)
+  - [📝 License ](#-license-)
 
-# 📖 Leaderboard<a name="about-project"></a>
+<!-- PROJECT DESCRIPTION -->
 
+# 📖 [LeaderBoard] <a name="about-project"></a>
 
-**Leaderboard** is a basic game dashboard that shows your name and your scores.
+**[LeaderBoard]**
+ is a website displays scores submitted by different players. It also allows you to submit your score.
 
 ## 🛠 Built With <a name="built-with"></a>
 
@@ -45,7 +45,6 @@
 
 ### Key Features <a name="key-features"></a>
 
-
 - A display board for users names and scores
 - An input field for name and scores.
 - A submit button to add to the display section.
@@ -56,8 +55,8 @@
 
 ## 🚀 Live Demo <a name="live-demo"></a>
 
+- [Demo](https://emmanuelsteven.github.io/LeaderBoard/dist/)
 
-- [Live Demo]()
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -78,8 +77,9 @@ In order to run this project you need:
 Clone this repository to your desired folder:
 
 ```
-git clone https://github.com/skabeo/Leaderboard.git
-cd Leaderboard
+git clone https://github.com/emmanuelsteven/LeaderBoard.git
+cd LeaderBoard
+
 ```
 
 ### Install
@@ -99,7 +99,6 @@ To run the project, execute the following command:
 ```
 npm start
 ```
-
 
 ### Run tests
 
@@ -123,11 +122,10 @@ Github pages
 
 ## 👥 Author <a name="authors"></a>
 
-
 👤 **Emmanuel Steven**
-
 - GitHub: [@emmanuelsteven](https://github.com/emmanuelsteven)
 - Twitter: [@/CjayStev](https://twitter.com//CjayStev)
+
 
 
 
@@ -162,10 +160,7 @@ If you like this project leave a star on the project.
 
 ## 🙏 Acknowledgments <a name="acknowledgements"></a>
 
-
-I would like to thank;
-
-- Microverse
+I would like to appreciate Microverse for making bringing all these together
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
