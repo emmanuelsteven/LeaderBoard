@@ -10,7 +10,7 @@
 # 📗 Table of Contents
 
 - [📗 Table of Contents](#-table-of-contents)
-- [📖 \[LeaderBoard\] ](#-Leader-board-)
+- [📖 About the Project](#about-project) 
   - [🛠 Built With ](#-built-with-)
     - [Tech Stack ](#tech-stack-)
     - [Key Features ](#key-features-)
@@ -28,7 +28,7 @@
 
 <!-- PROJECT DESCRIPTION -->
 
-# 📖 [Leaderboard] <a name="Leaderboard"></a>
+# 📖 [LeaderBoard] <a name="about-project"></a>
 
 **[LeaderBoard]**
  is a website displays scores submitted by different players. It also allows you to submit your score.
@@ -61,7 +61,10 @@
 
 ### Key Features <a name="key-features"></a>
 
-- **[Add scores reload score]**
+- A display board for users names and scores
+- An input field for name and scores.
+- A submit button to add to the display section.
+- A refresh button that resets the scores.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -69,7 +72,7 @@
 
 ## 🚀 Live Demo <a name="live-demo"></a>
 
-- [Demo]()
+- [Demo](https://emmanuelsteven.github.io/LeaderBoard/dist/)
 
 <!-- GETTING STARTED -->
 
@@ -81,25 +84,56 @@ To get a local copy up and running, follow these steps.
 
 In order to run this project you need:
 
-```sh
-sudo apt install git-all
-or
+- Web Pack configuration
+
+### Setup
+
+Clone this repository to your desired folder:
+
+```
+git clone https://github.com/emmanuelsteven/LeaderBoard.git
+cd LeaderBoard
+```
+
+### Install
+
+Install this project with:
+
+```
+cd Todo-list
 npm install
 ```
-npm run build
+
+
+### Usage
+
+To run the project, execute the following command:
+
+```
+npm start
 ```
 
-or
+
+### Run tests
+
+To run tests, run the following command:
 
 ```
-yarn build
+npm test
 ```
 
-to bundle your application
+
+### Deployment
+
+You can deploy this project using:
+
+```
+Github pages
+```
 
  <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-## 👥 Authors <a name="authors"></a>
+## 👥 Author <a name = "authors"></a>
 
 👤 Author** Steven Emmanuel Chijioke**
 - GitHub:[@emmanuelsteven](https://github.com/emmanuelsteven)
@@ -129,7 +163,7 @@ Give a star if you like this project!
 
 
 ## 🙏 Acknowledgments <a name="acknowledgements"></a>
-I would like to apprciate Microverse for making bringing all these together
+I would like to appreciate Microverse for making bringing all these together
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
